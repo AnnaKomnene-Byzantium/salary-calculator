@@ -68,10 +68,6 @@ to{opacity:1;max-height:4000px}
 0%{opacity:0;transform:translateY(48px)}
 100%{opacity:1;transform:translateY(0)}
 }
-@keyframes shimmer{
-0%{background-position:-200% 0}
-100%{background-position:200% 0}
-}
 
 .anim{animation:reveal .9s cubic-bezier(.16,1,.3,1) both}
 .anim:nth-child(1){animation-delay:0s}
@@ -228,7 +224,7 @@ letter-spacing:-.01em;
 }
 .name-input{font-family:var(--font)!important;font-size:15px!important;font-weight:500}
 
-/* Column tints — match result card colors */
+/* Column tints */
 .col-mgr{background:var(--gold-bg);padding:8px 16px;margin:-8px -16px}
 .col-staff{background:var(--staff-bg,#fafaf7);padding:8px 16px;margin:-8px -16px}
 
@@ -293,7 +289,6 @@ display:block;
 animation:revealDown .8s cubic-bezier(.16,1,.3,1);
 }
 
-/* Summary */
 .summary-bar{
 display:grid;
 grid-template-columns:repeat(4,1fr);
@@ -311,7 +306,6 @@ transition:all .3s ease;
 .summary-item.highlight{background:var(--gold-bg)}
 .summary-item.highlight .s-val{color:var(--gold);font-weight:600}
 
-/* Result cards */
 .result-grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
@@ -440,7 +434,7 @@ background:var(--line);
 .footer .ak{font-family:"Cinzel","Times New Roman",Georgia,serif;font-weight:500;letter-spacing:.12em;font-size:10px;color:var(--text2)}
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE (Mobile Updates)
    ============================================================ */
 @media(max-width:834px){
 body{padding:0 16px 130px}
@@ -452,14 +446,23 @@ body{padding:0 16px 130px}
 .hero p{font-size:14px}
 .hero-icon{width:52px;height:52px;font-size:24px;margin-bottom:24px}
 
-/* ---- grid: override the JS inline --grid-tpl custom property ---- */
 .grid{
   --grid-tpl:1fr!important;
   grid-template-columns:1fr!important;
   gap:2px;
 }
 .grid .col-header{display:none}
-.grid .cell .mobile-label{display:block;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;padding-top:4px}
+
+/* Mobile labels with remove button */
+.grid .cell .mobile-label{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size:10px;font-weight:600;color:var(--text3);
+    letter-spacing:.06em;text-transform:uppercase;
+    margin-bottom:4px;padding-top:4px;
+}
+
 .grid .row-label{font-size:12px;font-weight:500;color:var(--text);padding:16px 0 4px;border-top:1px solid var(--line2);margin-top:6px}
 .grid .row-label:first-of-type{border-top:none}
 .grid .row-label .badge{display:none}
@@ -515,14 +518,12 @@ body{background:#fff;padding:20px;color:#000}
 
 <div class="container">
 
-<!-- Hero -->
 <div class="hero anim">
 <div class="hero-icon">💰</div>
 <h1>Salary Calculator</h1>
 <p>绩效分配 · 多退少补 · 公平透明</p>
 </div>
 
-<!-- Personnel -->
 <div class="section anim">
 <div class="section-label">人员信息</div>
 <div class="grid" id="personGrid"></div>
@@ -532,7 +533,6 @@ body{background:#fff;padding:20px;color:#000}
 </div>
 </div>
 
-<!-- Public -->
 <div class="section anim">
 <div class="section-label">公共项目</div>
 <div class="global-row">
@@ -541,41 +541,32 @@ body{background:#fff;padding:20px;color:#000}
 </div>
 </div>
 
-<!-- Buttons -->
 <div class="btn-row anim" id="btnRow">
 <button class="btn btn-primary" onclick="calculate()">计算工资</button>
 <button class="btn btn-secondary" onclick="resetAll()">清空</button>
 <button class="btn btn-secondary" onclick="saveData()">保存</button>
 </div>
 
-<!-- Results -->
 <div class="section result-section" id="resultSection">
 <div class="section-label">计算结果</div>
 <div class="summary-bar" id="summaryBar"></div>
 <div class="result-grid" id="resultGrid"></div>
 </div>
 
-<!-- History -->
 <div class="section history-section" id="historySection">
 <div class="section-label">历史记录 <span style="font-weight:400;font-size:10px;margin-left:auto;cursor:pointer;color:var(--red);float:right" onclick="clearHistory()">清空</span></div>
 <div class="history-list" id="historyList"><div class="no-history">暂无历史记录</div></div>
 </div>
 
-<!-- Footer -->
 <div class="footer"><span class="star">✦</span><span class="dot"></span> Powered by <span class="ak">AnnaKomnene</span> <span class="dot"></span><span class="star">✦</span></div>
 
-<!-- Toast -->
 <div class="save-toast" id="saveToast">数据已保存</div>
 
-<!-- Float -->
 <button class="float-btn" id="floatBtn" onclick="calculate()">计算工资</button>
 
 </div>
 
 <script>
-/* ============================================================
-   DATA
-   ============================================================ */
 let personIdCounter=3;
 let persons=[
 {id:0,role:'manager',label:'店长',defaultName:'店长'},
@@ -600,7 +591,10 @@ build();
 }
 
 function removePerson(idx){
-if(persons.length<=2)return;
+if(persons.length<=2) {
+    alert("至少需要保留两名人员");
+    return;
+}
 persons.splice(idx,1);
 build();
 }
@@ -629,14 +623,16 @@ let va='';
 if(f.key==='name')va='value="'+p.defaultName+'"';
 const attrs=va+' placeholder="'+f.ph+'" step="'+(f.step||'any')+'"'+(f.min!==undefined?' min="'+f.min+'"':'');
 h+='<div class="cell '+colCls+'">'
-+'<span class="mobile-label">'+(p.role==='manager'?'<span style="color:var(--gold)">◈ '+p.label+'</span>':'<span style="color:var(--staff-accent)">◉ '+p.label+'</span>')+'</span>'
++'<span class="mobile-label">'
++(p.role==='manager'?'<span style="color:var(--gold)">◈ '+p.label+'</span>':'<span style="color:var(--staff-accent)">◉ '+p.label+'</span>')
++(persons.length>2 ? '<span style="color:var(--red);cursor:pointer;font-weight:600;" onclick="removePerson('+i+')">移除</span>' : '')
++'</span>'
 +'<input type="'+f.type+'" class="'+f.cls+'" '+attrs+'>'
 +'</div>';
 });
 });
 
 g.innerHTML=h;
-
 g.querySelectorAll('input[type="number"]').forEach(inp=>{
 inp.addEventListener('input',function(){
 const v=parseFloat(this.value);
@@ -647,20 +643,13 @@ this.classList.remove('input-error');
 }
 });
 });
-
 restoreData();
 }
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
 function v(sel,i){const el=document.querySelectorAll(sel.split(' ')[0])[i];return el?(parseFloat(el.value)||0):0}
 function t(sel,i){const el=document.querySelectorAll(sel.split(' ')[0])[i];return el?el.value.trim():''}
 function fmt(n){const num=typeof n==='number'?n:parseFloat(n);return(isNaN(num)?0:num).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
 
-/* ============================================================
-   COUNT-UP
-   ============================================================ */
 function countUp(el,from,to,duration,prefix){
 prefix=prefix||'';
 const start=performance.now();
@@ -674,9 +663,6 @@ if(p<1)requestAnimationFrame(step);
 requestAnimationFrame(step);
 }
 
-/* ============================================================
-   CALCULATION
-   ============================================================ */
 function calculate(){
 const nm=persons.map((_,i)=>t('.p-name',i));
 const base=persons.map((_,i)=>v('.p-base',i));
@@ -722,11 +708,9 @@ res.forEach((r,idx)=>{
 const actual=r.pb+r.rw;
 const d=actual-avgActual;
 const isUp=d>=0;
-
 const c=document.createElement('div');
 c.className='result-card '+(r.isMgr?'manager':'staff')+' card-anim';
 c.style.animationDelay=(idx*.12)+'s';
-
 c.innerHTML=
 (r.isMgr?'<div class="result-mgr-badge">店 长</div>':'<div class="result-staff-badge">'+r.label+'</div>')+
 '<div class="result-name">'+r.name+'</div>'+
@@ -737,7 +721,6 @@ c.innerHTML=
 '<div class="result-item"><span class="lbl">店长绩效</span><span class="amt plus" data-target="'+r.ma+'">+'+fmt(r.ma)+'</span></div>'+
 '<div class="result-total"><span class="lbl">合 计</span><span class="amt" data-total="'+r.total+'">'+fmt(r.total)+'</span></div>'+
 '<div class="result-settle"><span class="tag '+(isUp?'tag-up':'tag-down')+'">'+(isUp?'▲':'▼')+' 实际所得'+(isUp?'高于':'低于')+'均值</span><span style="font-family:\"Times New Roman\",Georgia,serif;font-weight:700;color:'+(isUp?'var(--green)':'var(--red)')+'">'+(isUp?'+':'')+fmt(d)+'</span></div>';
-
 grid.appendChild(c);
 });
 
@@ -750,13 +733,9 @@ countUp(el,0,Math.abs(tv),600,prefix);
 const poolEl=document.getElementById('sumPool');
 countUp(poolEl,0,totalPool,600);
 },250);
-
 saveToHistory(res,totalPool,mgrB);
 }
 
-/* ============================================================
-   RESET / SAVE / RESTORE
-   ============================================================ */
 function resetAll(){
 document.querySelectorAll('.grid input').forEach(inp=>{
 if(inp.classList.contains('p-name')){
@@ -802,14 +781,10 @@ if(d.mgrB)document.getElementById('managerBonus').value=d.mgrB;
 }catch(e){}
 }
 
-/* ============================================================
-   HISTORY
-   ============================================================ */
 function saveToHistory(res,totalPool,mgrB){
 const now=new Date();
 const ts=now.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-const names=res.map(r=>r.name).join('、');
-const entry={ts,names,totalPool,mgrB,persons:res.map(r=>({name:r.name,isMgr:r.isMgr,total:r.total,pb:r.pb,rw:r.rw,days:r.days}))};
+const entry={ts,names:res.map(r=>r.name).join('、'),totalPool,mgrB,persons:res.map(r=>({name:r.name,isMgr:r.isMgr,total:r.total}))};
 let history=[];
 try{history=JSON.parse(localStorage.getItem('salary-history')||'[]')}catch(e){}
 history.unshift(entry);

@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工资计算器</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Cinzel:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RESET & DESIGN TOKENS
+   ============================================================ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+--bg:       #fafaf8;
+--card:     #ffffff;
+--text:     #1a1a1a;
+--text2:    #8c8c8c;
+--text3:    #b0b0b0;
+--line:     #e8e8e4;
+--line2:    #f0f0ec;
+--gold:     #b8860b;
+--gold-l:   #d4a537;
+--gold-bg:  #fdf8f0;
+--staff-accent:#9b8e7a;
+--staff-bg: #fafaf7;
+--green:    #2d8c4a;
+--red:      #c4423c;
+--font:     -apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","PingFang SC",sans-serif;
+--serif:    "Cormorant Garamond","Times New Roman",Georgia,serif;
+--mono:     "DM Mono","SF Mono","JetBrains Mono",Menlo,monospace;
+--radius:   2px;
+}
+
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden}
+
+body{
+font-family:var(--font);
+background:var(--bg);
+color:var(--text);
+min-height:100vh;
+padding:0 24px 120px;
+-webkit-font-smoothing:antialiased;
+-moz-osx-font-smoothing:grayscale;
+font-weight:400;
+line-height:1.6;
+font-size:15px;
+overflow-x:hidden;
+}
+
+.container{max-width:880px;margin:0 auto;width:100%}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes reveal{
+from{opacity:0;transform:translateY(40px)}
+to{opacity:1;transform:translateY(0)}
+}
+@keyframes revealDown{
+from{opacity:0;max-height:0}
+to{opacity:1;max-height:4000px}
+}
+@keyframes cardIn{
+0%{opacity:0;transform:translateY(48px)}
+100%{opacity:1;transform:translateY(0)}
+}
+@keyframes shimmer{
+0%{background-position:-200% 0}
+100%{background-position:200% 0}
+}
+
+.anim{animation:reveal .9s cubic-bezier(.16,1,.3,1) both}
+.anim:nth-child(1){animation-delay:0s}
+.anim:nth-child(2){animation-delay:.1s}
+.anim:nth-child(3){animation-delay:.2s}
+.anim:nth-child(4){animation-delay:.3s}
+.anim:nth-child(5){animation-delay:.4s}
+
+.card-anim{animation:cardIn .7s cubic-bezier(.16,1,.3,1) both}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{
+text-align:center;
+padding:80px 0 64px;
+}
+.hero-icon{
+display:inline-flex;align-items:center;justify-content:center;
+width:64px;height:64px;
+background:var(--card);
+font-size:30px;line-height:1;
+margin-bottom:32px;
+border-radius:50%;
+box-shadow:0 1px 2px rgba(0,0,0,.03),0 0 0 1px rgba(0,0,0,.03);
+}
+.hero h1{
+font-family:var(--serif);
+font-size:56px;font-weight:500;
+letter-spacing:-.02em;
+color:var(--text);
+margin-bottom:16px;
+line-height:1.15;
+font-style:italic;
+}
+.hero p{
+font-size:16px;font-weight:400;
+color:var(--text2);
+letter-spacing:.02em;
+}
+
+/* ============================================================
+   SECTION CARDS
+   ============================================================ */
+.section{
+background:var(--card);
+padding:44px 48px;
+margin-bottom:12px;
+border:1px solid var(--line);
+transition:border-color .4s ease;
+}
+.section:first-of-type{border-top:1px solid var(--line)}
+
+.section-label{
+font-size:10px;font-weight:600;
+color:var(--text3);
+letter-spacing:.12em;
+text-transform:uppercase;
+margin-bottom:36px;
+}
+
+/* ============================================================
+   GRID
+   ============================================================ */
+.grid{
+display:grid;
+grid-template-columns:var(--grid-tpl,100px 1fr);
+gap:10px 28px;
+align-items:center;
+}
+
+.grid .col-header{
+font-size:10px;font-weight:600;
+color:var(--text3);text-align:center;
+padding:8px 4px 18px;
+letter-spacing:.08em;
+text-transform:uppercase;
+position:relative;
+}
+.grid .col-header:first-child{text-align:left}
+
+.grid .row-label{
+font-size:13px;color:var(--text2);
+font-weight:400;padding:5px 0;
+}
+
+/* Badges */
+.badge{
+display:inline-block;
+font-size:9px;font-weight:600;
+padding:4px 12px;
+letter-spacing:.06em;margin-bottom:4px;
+text-transform:uppercase;
+}
+.badge-mgr{color:var(--gold);background:var(--gold-bg)}
+.badge-staff{color:var(--staff-accent,#9b8e7a)}
+
+/* Person controls */
+.person-controls{
+display:flex;gap:8px;margin-top:32px;flex-wrap:wrap;
+}
+.person-controls button{
+font-size:12px;font-weight:500;font-family:var(--font);
+padding:8px 20px;
+border:1px solid var(--line);background:transparent;
+color:var(--text2);cursor:pointer;
+transition:all .3s ease;letter-spacing:.02em;
+display:inline-flex;align-items:center;gap:6px;
+}
+.person-controls button:hover{
+border-color:var(--gold);color:var(--gold);
+background:var(--gold-bg);
+}
+.btn-del{
+display:none;
+position:absolute;top:0;right:4px;
+width:18px;height:18px;border-radius:50%;
+background:var(--card);border:1px solid var(--line);
+color:var(--text2);font-size:9px;line-height:16px;
+cursor:pointer;z-index:2;text-align:center;
+transition:all .2s ease;
+}
+.col-header:hover .btn-del{display:block}
+.btn-del:hover{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* ============================================================
+   INPUTS — Underline style
+   ============================================================ */
+.grid .cell{display:flex;flex-direction:column;gap:1px;position:relative}
+.grid .cell .mobile-label{display:none}
+
+.grid input,.global-row input{
+width:100%;padding:12px 0;
+border:none;
+border-bottom:1px solid var(--line3,var(--line));
+background:transparent;
+font-size:15px;font-weight:400;
+outline:none;
+transition:border-color .3s ease;
+color:var(--text);
+font-family:var(--font);
+}
+.grid input:focus,.global-row input:focus{
+border-bottom-color:var(--text);
+}
+.grid input::placeholder,.global-row input::placeholder{
+color:#d0d0cc;font-weight:400;
+}
+.grid input.input-error{border-bottom-color:var(--red)}
+
+.grid input[type="number"],.global-row input{
+font-family:"Times New Roman",Georgia,serif;font-size:14px;
+letter-spacing:-.01em;
+}
+.name-input{font-family:var(--font)!important;font-size:15px!important;font-weight:500}
+
+/* Column tints — match result card colors */
+.col-mgr{background:var(--gold-bg);padding:8px 16px;margin:-8px -16px}
+.col-staff{background:var(--staff-bg,#fafaf7);padding:8px 16px;margin:-8px -16px}
+
+/* ============================================================
+   GLOBAL ROW
+   ============================================================ */
+.global-row{display:flex;align-items:center;gap:24px}
+.global-row label{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.global-row input{width:260px}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-row{display:flex;gap:10px;margin-bottom:12px}
+.btn{
+position:relative;overflow:hidden;
+padding:14px 28px;
+font-size:13px;font-weight:600;
+font-family:var(--font);border:none;
+cursor:pointer;
+letter-spacing:.04em;
+transition:all .35s cubic-bezier(.16,1,.3,1);
+display:inline-flex;align-items:center;gap:8px;
+justify-content:center;
+text-transform:uppercase;
+}
+
+.btn-primary{
+flex:1;
+background:var(--text);
+color:var(--card);
+font-size:14px;padding:16px 32px;
+}
+.btn-primary:hover{background:#333}
+
+.btn-secondary{
+background:transparent;
+color:var(--text2);
+border:1px solid var(--line);
+}
+.btn-secondary:hover{background:var(--line2);color:var(--text)}
+
+/* Float btn */
+.float-btn{
+display:none;
+position:fixed;bottom:24px;left:20px;right:20px;z-index:100;
+background:var(--text);color:var(--card);border:none;
+padding:18px;
+font-size:15px;font-weight:600;
+letter-spacing:.04em;cursor:pointer;
+font-family:var(--font);
+text-transform:uppercase;
+}
+.float-btn:active{background:#333}
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+.result-section{display:none}
+.result-section.show{
+display:block;
+animation:revealDown .8s cubic-bezier(.16,1,.3,1);
+}
+
+/* Summary */
+.summary-bar{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:12px;margin-bottom:28px;
+}
+.summary-item{
+background:var(--bg);
+padding:28px 20px;text-align:center;
+border:1px solid transparent;
+transition:all .3s ease;
+}
+.summary-item:hover{background:var(--card);border-color:var(--line)}
+.summary-item .s-lbl{font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.summary-item .s-val{font-size:26px;font-weight:400;font-family:var(--serif);color:var(--text);font-style:italic}
+.summary-item.highlight{background:var(--gold-bg)}
+.summary-item.highlight .s-val{color:var(--gold);font-weight:600}
+
+/* Result cards */
+.result-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:12px;margin-bottom:28px;
+}
+
+.result-card{
+background:var(--card);
+padding:36px 32px;
+border:1px solid var(--line);
+position:relative;
+transition:all .4s ease;
+}
+.result-card:hover{border-color:var(--text3)}
+.result-card::before{
+content:'';
+position:absolute;top:-1px;left:-1px;right:-1px;height:1px;
+}
+.result-card.manager{background:var(--gold-bg)}
+.result-card.manager::before{background:var(--gold)}
+.result-card.staff{background:var(--staff-bg,#fafaf7)}
+.result-card.staff::before{background:var(--staff-accent,#9b8e7a)}
+
+.result-mgr-badge{
+display:inline-block;
+font-size:9px;font-weight:600;letter-spacing:.08em;
+color:var(--gold);background:rgba(184,134,11,.1);
+padding:5px 12px;
+margin-bottom:16px;
+text-transform:uppercase;
+}
+
+.result-staff-badge{
+display:inline-block;
+font-size:9px;font-weight:600;letter-spacing:.08em;
+color:var(--staff-accent,#9b8e7a);
+background:rgba(155,142,122,.1);
+padding:5px 12px;
+margin-bottom:16px;
+text-transform:uppercase;
+}
+
+.result-name{font-size:20px;font-weight:500;color:var(--text);margin-bottom:4px;letter-spacing:-.01em;font-family:var(--serif);font-style:italic}
+.result-sub{font-size:11px;color:var(--text2);margin-bottom:28px;line-height:1.6;font-weight:400}
+
+.result-item{
+display:flex;justify-content:space-between;align-items:center;
+padding:10px 0;font-size:14px;
+}
+.result-item+.result-item{border-top:1px solid var(--line2)}
+.result-item .lbl{color:var(--text3);font-weight:400;font-size:12px}
+.result-item .amt{font-weight:500;font-size:14px;color:var(--text);font-family:"Times New Roman",Georgia,serif}
+.result-item .amt.plus{color:var(--green)}
+.result-item .amt.minus{color:var(--red)}
+
+.result-total{
+display:flex;justify-content:space-between;align-items:center;
+padding:16px 0 0;margin-top:14px;
+border-top:2px solid var(--text);
+font-size:14px;font-weight:600;
+}
+.result-total .amt{font-family:"Times New Roman",Georgia,serif;font-size:24px;font-weight:700}
+
+.result-settle{
+display:flex;justify-content:space-between;align-items:center;
+padding:8px 0 0;margin-top:10px;
+font-size:12px;font-weight:500;
+}
+.result-settle .tag{
+display:inline-flex;align-items:center;gap:4px;
+font-size:10px;font-weight:600;letter-spacing:.04em;
+text-transform:uppercase;
+}
+.tag-up{color:var(--green)}
+.tag-down{color:var(--red)}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+.history-section{display:none}
+.history-section.show{display:block}
+.history-list{display:flex;flex-direction:column;gap:6px}
+.history-item{
+display:flex;align-items:center;justify-content:space-between;
+background:var(--bg);border:1px solid transparent;
+padding:16px 24px;cursor:pointer;transition:all .3s ease;
+}
+.history-item:hover{background:var(--card);border-color:var(--line)}
+.history-item .hi-date{font-size:11px;color:var(--text3);min-width:80px;font-family:var(--mono)}
+.history-item .hi-summary{font-size:13px;font-weight:400;color:var(--text);flex:1;margin:0 16px}
+.history-item .hi-total{font-size:16px;font-weight:500;color:var(--gold);font-family:"Times New Roman",Georgia,serif;font-style:italic}
+.history-item .hi-del{font-size:14px;color:var(--line);cursor:pointer;padding:0 6px;transition:color .2s}
+.history-item .hi-del:hover{color:var(--red)}
+.no-history{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;font-style:italic}
+
+/* ============================================================
+   TOAST & FOOTER
+   ============================================================ */
+.save-toast{
+position:fixed;top:24px;left:50%;transform:translateX(-50%);
+background:var(--text);color:var(--card);
+padding:10px 24px;
+font-size:12px;font-weight:500;font-family:var(--font);
+opacity:0;transition:opacity .4s ease;
+z-index:200;pointer-events:none;
+letter-spacing:.02em;
+}
+.save-toast.show{opacity:1}
+
+.footer{
+text-align:center;margin-top:56px;
+padding:32px 0 12px;font-size:10px;font-weight:500;
+color:var(--text3);letter-spacing:.08em;
+text-transform:uppercase;
+position:relative;
+}
+.footer::before{
+content:'';
+display:block;
+width:32px;height:1px;
+margin:0 auto 20px;
+background:var(--line);
+}
+.footer .star{display:inline-block;vertical-align:middle;font-size:11px;color:var(--line);margin:0 4px}
+.footer .dot{display:inline-block;width:2px;height:2px;border-radius:50%;background:var(--line);margin:0 12px;vertical-align:middle;opacity:.6}
+.footer .ak{font-family:"Cinzel","Times New Roman",Georgia,serif;font-weight:500;letter-spacing:.12em;font-size:10px;color:var(--text2)}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:834px){
+body{padding:0 16px 130px}
+.section{padding:28px 20px}
+.section-label{font-size:9px;margin-bottom:28px}
+
+.hero{padding:48px 0 40px}
+.hero h1{font-size:40px}
+.hero p{font-size:14px}
+.hero-icon{width:52px;height:52px;font-size:24px;margin-bottom:24px}
+
+/* ---- grid: override the JS inline --grid-tpl custom property ---- */
+.grid{
+  --grid-tpl:1fr!important;
+  grid-template-columns:1fr!important;
+  gap:2px;
+}
+.grid .col-header{display:none}
+.grid .cell .mobile-label{display:block;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;padding-top:4px}
+.grid .row-label{font-size:12px;font-weight:500;color:var(--text);padding:16px 0 4px;border-top:1px solid var(--line2);margin-top:6px}
+.grid .row-label:first-of-type{border-top:none}
+.grid .row-label .badge{display:none}
+.col-mgr,.col-staff{padding:6px 12px;margin:0}
+.grid input{font-size:17px!important;padding:14px 0!important}
+
+.global-row{flex-direction:column;align-items:stretch;gap:10px}
+.global-row input{width:100%}
+.btn-row{flex-direction:column;gap:6px}
+.btn{width:100%}
+
+.summary-bar{grid-template-columns:repeat(2,1fr);gap:8px}
+.summary-item{padding:20px 14px}
+.summary-item .s-val{font-size:22px}
+
+.result-grid{grid-template-columns:1fr;gap:10px}
+.result-card{padding:28px 20px}
+
+.float-btn{display:block}
+
+.person-controls{gap:6px}
+.person-controls button{font-size:11px;padding:7px 14px}
+.history-item{flex-wrap:wrap;gap:6px;padding:14px 18px}
+.history-item .hi-summary{flex:1 1 100%;margin:0}
+}
+
+@media(max-width:480px){
+body{padding:0 12px 130px}
+.hero h1{font-size:30px}
+.hero p{font-size:13px}
+.section{padding:20px 14px}
+.result-card{padding:22px 16px}
+.result-name{font-size:18px}
+.result-total .amt{font-size:20px}
+.result-item{font-size:13px}
+.summary-bar{grid-template-columns:repeat(2,1fr);gap:6px}
+.summary-item{padding:16px 10px}
+.summary-item .s-val{font-size:18px}
+.history-item{padding:12px 14px}
+.history-item .hi-date{font-size:10px}
+.history-item .hi-total{font-size:14px}
+}
+
+@media print{
+body{background:#fff;padding:20px;color:#000}
+.btn-row,.float-btn,.save-toast,.footer,.person-controls{display:none!important}
+.section{border:1px solid #ddd;box-shadow:none}
+.result-section{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- Hero -->
+<div class="hero anim">
+<div class="hero-icon">💰</div>
+<h1>Salary Calculator</h1>
+<p>绩效分配 · 多退少补 · 公平透明</p>
+</div>
+
+<!-- Personnel -->
+<div class="section anim">
+<div class="section-label">人员信息</div>
+<div class="grid" id="personGrid"></div>
+<div class="person-controls">
+<button onclick="addPerson('manager')">+ 添加店长</button>
+<button onclick="addPerson('staff')">+ 添加店员</button>
+</div>
+</div>
+
+<!-- Public -->
+<div class="section anim">
+<div class="section-label">公共项目</div>
+<div class="global-row">
+<label for="managerBonus">店长绩效（元）</label>
+<input type="number" id="managerBonus" value="0" min="0" step="0.01" placeholder="0.00">
+</div>
+</div>
+
+<!-- Buttons -->
+<div class="btn-row anim" id="btnRow">
+<button class="btn btn-primary" onclick="calculate()">计算工资</button>
+<button class="btn btn-secondary" onclick="resetAll()">清空</button>
+<button class="btn btn-secondary" onclick="saveData()">保存</button>
+</div>
+
+<!-- Results -->
+<div class="section result-section" id="resultSection">
+<div class="section-label">计算结果</div>
+<div class="summary-bar" id="summaryBar"></div>
+<div class="result-grid" id="resultGrid"></div>
+</div>
+
+<!-- History -->
+<div class="section history-section" id="historySection">
+<div class="section-label">历史记录 <span style="font-weight:400;font-size:10px;margin-left:auto;cursor:pointer;color:var(--red);float:right" onclick="clearHistory()">清空</span></div>
+<div class="history-list" id="historyList"><div class="no-history">暂无历史记录</div></div>
+</div>
+
+<!-- Footer -->
+<div class="footer"><span class="star">✦</span><span class="dot"></span> Powered by <span class="ak">AnnaKomnene</span> <span class="dot"></span><span class="star">✦</span></div>
+
+<!-- Toast -->
+<div class="save-toast" id="saveToast">数据已保存</div>
+
+<!-- Float -->
+<button class="float-btn" id="floatBtn" onclick="calculate()">计算工资</button>
+
+</div>
+
+<script>
+/* ============================================================
+   DATA
+   ============================================================ */
+let personIdCounter=3;
+let persons=[
+{id:0,role:'manager',label:'店长',defaultName:'店长'},
+{id:1,role:'staff',label:'店员A',defaultName:'店员A'},
+{id:2,role:'staff',label:'店员B',defaultName:'店员B'},
+];
+const fields=[
+{key:'name',label:'姓名',cls:'p-name name-input',type:'text',ph:''},
+{key:'base',label:'基本工资（元）',cls:'p-base',type:'number',ph:'0.00',step:'0.01',min:'0'},
+{key:'days',label:'出勤天数',cls:'p-days',type:'number',ph:'0',step:'0.5',min:'0'},
+{key:'perf',label:'绩效基数（元）',cls:'p-perf',type:'number',ph:'0.00',step:'0.01',min:'0'},
+{key:'reward',label:'奖惩（元）',cls:'p-reward',type:'number',ph:'0.00',step:'0.01'},
+];
+
+function addPerson(role){
+const mc=persons.filter(p=>p.role==='manager').length;
+const sc=persons.filter(p=>p.role==='staff').length;
+const n=role==='manager'?mc+1:sc+1;
+const label=role==='manager'?('店长'+n):('店员'+String.fromCharCode(64+n));
+persons.push({id:personIdCounter++,role,label,defaultName:label});
+build();
+}
+
+function removePerson(idx){
+if(persons.length<=2)return;
+persons.splice(idx,1);
+build();
+}
+
+function build(){
+const g=document.getElementById('personGrid');
+g.style.setProperty('--grid-tpl','100px '+persons.map(()=>'1fr').join(' '));
+
+let h='<div class="col-header"></div>';
+persons.forEach((p,i)=>{
+const badge=p.role==='manager'
+?'<span class="badge badge-mgr">店长</span>'
+:'<span class="badge badge-staff">'+p.label+'</span>';
+const del=persons.length>2
+?'<span class="btn-del" onclick="event.stopPropagation();removePerson('+i+')">×</span>'
+:'';
+h+='<div class="col-header">'+badge+del+'</div>';
+});
+
+fields.forEach(f=>{
+h+='<div class="row-label">'+f.label+'</div>';
+persons.forEach((p,i)=>{
+const isMgr=p.role==='manager';
+const colCls=isMgr?'col-mgr':'col-staff';
+let va='';
+if(f.key==='name')va='value="'+p.defaultName+'"';
+const attrs=va+' placeholder="'+f.ph+'" step="'+(f.step||'any')+'"'+(f.min!==undefined?' min="'+f.min+'"':'');
+h+='<div class="cell '+colCls+'">'
++'<span class="mobile-label">'+(p.role==='manager'?'<span style="color:var(--gold)">◈ '+p.label+'</span>':'<span style="color:var(--staff-accent)">◉ '+p.label+'</span>')+'</span>'
++'<input type="'+f.type+'" class="'+f.cls+'" '+attrs+'>'
++'</div>';
+});
+});
+
+g.innerHTML=h;
+
+g.querySelectorAll('input[type="number"]').forEach(inp=>{
+inp.addEventListener('input',function(){
+const v=parseFloat(this.value);
+if(this.value!==''&&!isNaN(v)&&v<0&&(this.classList.contains('p-days')||this.classList.contains('p-base'))){
+this.classList.add('input-error');
+}else{
+this.classList.remove('input-error');
+}
+});
+});
+
+restoreData();
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function v(sel,i){const el=document.querySelectorAll(sel.split(' ')[0])[i];return el?(parseFloat(el.value)||0):0}
+function t(sel,i){const el=document.querySelectorAll(sel.split(' ')[0])[i];return el?el.value.trim():''}
+function fmt(n){const num=typeof n==='number'?n:parseFloat(n);return(isNaN(num)?0:num).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+
+/* ============================================================
+   COUNT-UP
+   ============================================================ */
+function countUp(el,from,to,duration,prefix){
+prefix=prefix||'';
+const start=performance.now();
+function step(ts){
+const p=Math.min((ts-start)/duration,1);
+const eased=1-Math.pow(1-p,3);
+const val=from+(to-from)*eased;
+el.textContent=prefix+fmt(val);
+if(p<1)requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+}
+
+/* ============================================================
+   CALCULATION
+   ============================================================ */
+function calculate(){
+const nm=persons.map((_,i)=>t('.p-name',i));
+const base=persons.map((_,i)=>v('.p-base',i));
+const days=persons.map((_,i)=>v('.p-days',i));
+const perf=persons.map((_,i)=>v('.p-perf',i));
+const reward=persons.map((_,i)=>v('.p-reward',i));
+const mgrB=v('#managerBonus',0);
+const n=persons.length;
+const mgrCount=persons.filter(p=>p.role==='manager').length;
+
+const td=days.reduce((a,b)=>a+b,0);
+const tp=perf.reduce((a,b)=>a+b,0);
+const tr=reward.reduce((a,b)=>a+b,0);
+
+const res=persons.map((p,i)=>{
+const pa=td>0?(days[i]/td)*tp:0;
+const ra=tr/n;
+const hf=mgrB*0.5;
+const each=mgrCount>0?hf/n:0;
+const ma=p.role==='manager'?each+hf:each;
+const total=base[i]+pa+ra+ma;
+return{name:nm[i]||p.defaultName,label:p.label,isMgr:p.role==='manager',base:base[i],pa,ra,ma,total,days:days[i],pb:perf[i],rw:reward[i]};
+});
+
+const actuals=res.map(r=>r.pb+r.rw);
+const avgActual=actuals.reduce((s,v)=>s+v,0)/n;
+const totalPool=res.reduce((s,r)=>s+r.total,0);
+
+document.getElementById('summaryBar').innerHTML=
+'<div class="summary-item highlight"><div class="s-lbl">工资池总额</div><div class="s-val" id="sumPool">'+fmt(totalPool)+'</div></div>'+
+'<div class="summary-item"><div class="s-lbl">人均总工资</div><div class="s-val">'+fmt(totalPool/n)+'</div></div>'+
+'<div class="summary-item"><div class="s-lbl">总绩效基数</div><div class="s-val">'+fmt(tp)+'</div></div>'+
+'<div class="summary-item"><div class="s-lbl">店长绩效</div><div class="s-val">'+fmt(mgrB)+'</div></div>';
+
+const section=document.getElementById('resultSection');
+section.classList.add('show');
+section.scrollIntoView({behavior:'smooth',block:'start'});
+
+const grid=document.getElementById('resultGrid');
+grid.innerHTML='';
+
+res.forEach((r,idx)=>{
+const actual=r.pb+r.rw;
+const d=actual-avgActual;
+const isUp=d>=0;
+
+const c=document.createElement('div');
+c.className='result-card '+(r.isMgr?'manager':'staff')+' card-anim';
+c.style.animationDelay=(idx*.12)+'s';
+
+c.innerHTML=
+(r.isMgr?'<div class="result-mgr-badge">店 长</div>':'<div class="result-staff-badge">'+r.label+'</div>')+
+'<div class="result-name">'+r.name+'</div>'+
+'<div class="result-sub">出勤 '+r.days+' 天 &nbsp;·&nbsp; 绩效基数 '+fmt(r.pb)+' 元 &nbsp;·&nbsp; 奖惩 '+(r.rw>=0?'+':'')+fmt(r.rw)+' 元</div>'+
+'<div class="result-item"><span class="lbl">基本工资</span><span class="amt" data-target="'+r.base+'">'+fmt(r.base)+'</span></div>'+
+'<div class="result-item"><span class="lbl">绩效分配</span><span class="amt plus" data-target="'+r.pa+'">+'+fmt(r.pa)+'</span></div>'+
+'<div class="result-item"><span class="lbl">奖惩（均分）</span><span class="amt '+(r.ra>=0?'plus':'minus')+'" data-target="'+r.ra+'">'+(r.ra>=0?'+':'')+fmt(Math.abs(r.ra))+'</span></div>'+
+'<div class="result-item"><span class="lbl">店长绩效</span><span class="amt plus" data-target="'+r.ma+'">+'+fmt(r.ma)+'</span></div>'+
+'<div class="result-total"><span class="lbl">合 计</span><span class="amt" data-total="'+r.total+'">'+fmt(r.total)+'</span></div>'+
+'<div class="result-settle"><span class="tag '+(isUp?'tag-up':'tag-down')+'">'+(isUp?'▲':'▼')+' 实际所得'+(isUp?'高于':'低于')+'均值</span><span style="font-family:\"Times New Roman\",Georgia,serif;font-weight:700;color:'+(isUp?'var(--green)':'var(--red)')+'">'+(isUp?'+':'')+fmt(d)+'</span></div>';
+
+grid.appendChild(c);
+});
+
+setTimeout(()=>{
+grid.querySelectorAll('.amt[data-target], .amt[data-total]').forEach(el=>{
+const tv=parseFloat(el.getAttribute('data-target')||el.getAttribute('data-total'));
+const prefix=(el.classList.contains('plus')?'+':'')||(el.classList.contains('minus')?'-':'');
+countUp(el,0,Math.abs(tv),600,prefix);
+});
+const poolEl=document.getElementById('sumPool');
+countUp(poolEl,0,totalPool,600);
+},250);
+
+saveToHistory(res,totalPool,mgrB);
+}
+
+/* ============================================================
+   RESET / SAVE / RESTORE
+   ============================================================ */
+function resetAll(){
+document.querySelectorAll('.grid input').forEach(inp=>{
+if(inp.classList.contains('p-name')){
+const idx=Array.from(document.querySelectorAll('.p-name')).indexOf(inp);
+if(idx<persons.length)inp.value=persons[idx].defaultName;
+}else{inp.value='';}
+inp.classList.remove('input-error');
+});
+document.getElementById('managerBonus').value='0';
+document.getElementById('resultSection').classList.remove('show');
+localStorage.removeItem('salary-calc-data');
+}
+
+function saveData(){
+const data={
+pcount:persons.length,
+names:persons.map((_,i)=>t('.p-name',i)),
+base:persons.map((_,i)=>v('.p-base',i)),
+days:persons.map((_,i)=>v('.p-days',i)),
+perf:persons.map((_,i)=>v('.p-perf',i)),
+reward:persons.map((_,i)=>v('.p-reward',i)),
+mgrB:v('#managerBonus',0),
+};
+localStorage.setItem('salary-calc-data',JSON.stringify(data));
+const toast=document.getElementById('saveToast');
+toast.classList.add('show');
+setTimeout(()=>toast.classList.remove('show'),1800);
+}
+
+function restoreData(){
+try{
+const raw=localStorage.getItem('salary-calc-data');
+if(!raw)return;
+const d=JSON.parse(raw);
+if(d.pcount!==persons.length)return;
+['p-name','p-base','p-days','p-perf','p-reward'].forEach((cls,fi)=>{
+const arr=fi===0?d.names:fi===1?d.base:fi===2?d.days:fi===3?d.perf:d.reward;
+document.querySelectorAll('.'+cls).forEach((inp,i)=>{
+if(arr[i]!==undefined&&arr[i]!==0)inp.value=arr[i];
+});
+});
+if(d.mgrB)document.getElementById('managerBonus').value=d.mgrB;
+}catch(e){}
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+function saveToHistory(res,totalPool,mgrB){
+const now=new Date();
+const ts=now.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+const names=res.map(r=>r.name).join('、');
+const entry={ts,names,totalPool,mgrB,persons:res.map(r=>({name:r.name,isMgr:r.isMgr,total:r.total,pb:r.pb,rw:r.rw,days:r.days}))};
+let history=[];
+try{history=JSON.parse(localStorage.getItem('salary-history')||'[]')}catch(e){}
+history.unshift(entry);
+if(history.length>50)history=history.slice(0,50);
+localStorage.setItem('salary-history',JSON.stringify(history));
+renderHistory();
+}
+
+function renderHistory(){
+let history=[];
+try{history=JSON.parse(localStorage.getItem('salary-history')||'[]')}catch(e){}
+const section=document.getElementById('historySection');
+const list=document.getElementById('historyList');
+if(history.length===0){section.classList.remove('show');list.innerHTML='<div class="no-history">暂无历史记录</div>';return}
+section.classList.add('show');
+list.innerHTML=history.map((h,i)=>
+'<div class="history-item" onclick="restoreHistory('+i+')">'+
+'<span class="hi-date">'+h.ts+'</span>'+
+'<span class="hi-summary">'+h.names+' · 共'+h.persons.length+'人</span>'+
+'<span class="hi-total">¥'+fmt(h.totalPool)+'</span>'+
+'<span class="hi-del" onclick="event.stopPropagation();deleteHistory('+i+')">×</span>'+
+'</div>'
+).join('');
+}
+
+function deleteHistory(idx){let h=[];try{h=JSON.parse(localStorage.getItem('salary-history')||'[]')}catch(e){}h.splice(idx,1);localStorage.setItem('salary-history',JSON.stringify(h));renderHistory()}
+function clearHistory(){if(!confirm('确定清空全部历史记录？'))return;localStorage.removeItem('salary-history');renderHistory()}
+function restoreHistory(idx){let h=[];try{h=JSON.parse(localStorage.getItem('salary-history')||'[]')}catch(e){}const e=h[idx];if(!e)return;document.getElementById('managerBonus').value=e.mgrB||0;calculate()}
+
+build();
+renderHistory();
+</script>
+</body>
+</html>

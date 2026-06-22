@@ -635,14 +635,10 @@
     let eCount = 0;
 
     function initDefaultData() {
-        personnel = [
-            { id: 'm1', type: 'manager', name: '店长', base: '5000', days: '26', indPerf: '400', bonus: '300' },
-            { id: 'e1', type: 'employee', name: '店员A', base: '3000', days: '30', indPerf: '700', bonus: '500' },
-            { id: 'e2', type: 'employee', name: '店员B', base: '4000', days: '28', indPerf: '800', bonus: '-200' }
-        ];
-        mCount = 1; eCount = 2;
-        document.getElementById('standard_days').value = '30';
-        document.getElementById('global_manager_perf').value = '3000';
+        personnel = [];
+        mCount = 0; eCount = 0;
+        document.getElementById('standard_days').value = '';
+        document.getElementById('global_manager_perf').value = '';
         renderTable();
     }
 
